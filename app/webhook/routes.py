@@ -1,6 +1,6 @@
 from flask import Blueprint, json, request, jsonify, render_template
 from app.extensions import mongo_collection
-from datetime import datetime, timezone  # <--- Updated Import
+from datetime import datetime, timezone 
 import dateutil.parser
 
 webhook = Blueprint('Webhook', __name__, url_prefix='/webhook')
@@ -19,13 +19,13 @@ def receiver():
     
     data = None
 
-    # 1. Handle PUSH
+    # 1. Handle Push
     if event_type == 'push':
         author = payload.get('pusher', {}).get('name', 'Unknown')
         to_branch = payload.get('ref', '').split('/')[-1]
         req_id = payload.get('head_commit', {}).get('id', 'unknown_hash')
         
-        # FIX: Parse and immediately convert to UTC
+        # Parse and immediately convert to UTC
         timestamp_obj = dateutil.parser.parse(payload['head_commit']['timestamp'])
         timestamp_obj = timestamp_obj.astimezone(timezone.utc) 
         
@@ -41,7 +41,7 @@ def receiver():
             "formatted_message": f'"{author}" pushed to "{to_branch}" on {format_dt(timestamp_obj)}'
         }
 
-    # 2. Handle PULL REQUEST (and MERGE)
+    # 2. Handle Pull Request (and Merge)
     elif event_type == 'pull_request':
         action_status = payload.get('action')
         pr = payload.get('pull_request', {})
@@ -51,13 +51,13 @@ def receiver():
         
         req_id = str(pr.get('id', 'unknown_id'))
 
-        # FIX: Parse and immediately convert to UTC
+        # Parse and immediately convert to UTC
         timestamp_obj = dateutil.parser.parse(pr.get('updated_at'))
         timestamp_obj = timestamp_obj.astimezone(timezone.utc)
 
         timestamp_str = timestamp_obj.strftime("%Y-%m-%d %H:%M:%S UTC")
 
-        # MERGE LOGIC
+        # Merge Logic
         if action_status == 'closed' and pr.get('merged') is True:
             data = {
                 "request_id": req_id,
@@ -68,7 +68,7 @@ def receiver():
                 "timestamp": timestamp_str,
                 "formatted_message": f'"{author}" merged branch "{from_branch}" to "{to_branch}" on {format_dt(timestamp_obj)}'
             }
-        # STANDARD PR LOGIC
+        # Standard PR logic
         elif action_status in ['opened', 'reopened', 'synchronize']:
             data = {
                 "request_id": req_id,
