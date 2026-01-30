@@ -1,4 +1,29 @@
-__pycache__
-.vscode
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Virtual Environments (uv & venv) ---
+# uv typically creates .venv, but we include others just in case
+.venv/
+venv/
+env/
+
+# --- Environment Variables (Security) ---
+# NEVER commit this file
 .env
-venv
+
+# --- IDE & Editor Settings ---
+.vscode/
+.idea/
+
+# --- MongoDB / Local Data ---
+# Ignore local database folders or dump files if you created them
+/data/
+/db/
+dump/
+*.log
+
+# --- OS Generated Files ---
+.DS_Store
+Thumbs.db
