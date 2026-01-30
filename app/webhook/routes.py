@@ -1,6 +1,6 @@
 from flask import Blueprint, json, request, jsonify, render_template
 from app.extensions import mongo_collection
-from datetime import datetime
+from datetime import datetime, timezone  # <--- Updated Import
 import dateutil.parser
 
 webhook = Blueprint('Webhook', __name__, url_prefix='/webhook')
@@ -23,11 +23,12 @@ def receiver():
     if event_type == 'push':
         author = payload.get('pusher', {}).get('name', 'Unknown')
         to_branch = payload.get('ref', '').split('/')[-1]
-        # Git commit hash directly
         req_id = payload.get('head_commit', {}).get('id', 'unknown_hash')
         
-        # datetime formatted string (UTC)
+        # FIX: Parse and immediately convert to UTC
         timestamp_obj = dateutil.parser.parse(payload['head_commit']['timestamp'])
+        timestamp_obj = timestamp_obj.astimezone(timezone.utc) 
+        
         timestamp_str = timestamp_obj.strftime("%Y-%m-%d %H:%M:%S UTC")
 
         data = {
@@ -48,10 +49,12 @@ def receiver():
         from_branch = pr.get('head', {}).get('ref')
         to_branch = pr.get('base', {}).get('ref')
         
-        # For Pull Requests, use the PR ID"
         req_id = str(pr.get('id', 'unknown_id'))
 
+        # FIX: Parse and immediately convert to UTC
         timestamp_obj = dateutil.parser.parse(pr.get('updated_at'))
+        timestamp_obj = timestamp_obj.astimezone(timezone.utc)
+
         timestamp_str = timestamp_obj.strftime("%Y-%m-%d %H:%M:%S UTC")
 
         # MERGE LOGIC
@@ -90,7 +93,5 @@ def index():
 @webhook.route('/events')
 def get_events():
     # Fetch latest 10 events.
-    # Note: Sorting by string timestamp is less accurate than Date object, 
-    # but strictly required by schema. 
     events = list(mongo_collection.find({}, {'_id': 0}).sort('_id', -1).limit(10))
     return jsonify(events)
